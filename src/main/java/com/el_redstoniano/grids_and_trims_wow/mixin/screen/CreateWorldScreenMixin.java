@@ -12,8 +12,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class CreateWorldScreenMixin {
     @WrapOperation(method = "init", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/widget/TabNavigationWidget$Builder;tabs([Lnet/minecraft/client/gui/tab/Tab;)Lnet/minecraft/client/gui/widget/TabNavigationWidget$Builder;"))
     private TabNavigationWidget.Builder s(TabNavigationWidget.Builder instance, Tab[] tabs, Operation<TabNavigationWidget.Builder> original) {
-        //instance.tabs(new Ta);
-        return instance.tabs(tabs);
+        return original.call(instance, tabs);
     }
 
 }

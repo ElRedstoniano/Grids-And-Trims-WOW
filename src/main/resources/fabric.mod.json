@@ -13,8 +13,8 @@
 
   "environment": "*",
   "entrypoints": {
-    "fabric-datagen": ["com.el_redstoniano.grids_and_trims_wow.client.Grids_and_trims_wowDataGenerator"],
-    "client": ["com.el_redstoniano.grids_and_trims_wow.client.Grids_and_trims_wowClient"],
+    "fabric-datagen": ["com.el_redstoniano.grids_and_trims_wow.GridsAndTrimsDataGenerator"],
+    "client": ["com.el_redstoniano.grids_and_trims_wow.GridsAndTrimsClient"],
     "main": [
       "com.el_redstoniano.grids_and_trims_wow.GridsAndTrims"
     ]
