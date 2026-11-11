@@ -1,5 +1,6 @@
 package com.el_redstoniano.grids_and_trims_wow;
 
+import com.el_redstoniano.grids_and_trims_wow.config.GridConfig;
 import com.el_redstoniano.grids_and_trims_wow.managers.ChunkGeneratorManager;
 import com.el_redstoniano.grids_and_trims_wow.model.ChunkProcessingContext;
 import com.el_redstoniano.grids_and_trims_wow.utils.ChunkUtils;
@@ -24,7 +25,7 @@ public class GridsAndTrims implements ModInitializer {
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static final ThreadLocal<ChunkProcessingContext> threadLocalChunkContext = new ThreadLocal<>();
-    private static final ChunkGeneratorManager CHUNK_MANAGER = new ChunkGeneratorManager();
+    private static final ChunkGeneratorManager CHUNK_MANAGER = new ChunkGeneratorManager(GridConfig.DEFAULT);
 
     @Override
     public void onInitialize() {

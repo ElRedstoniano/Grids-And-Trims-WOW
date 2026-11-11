@@ -1,5 +1,6 @@
 package com.el_redstoniano.grids_and_trims_wow.managers;
 
+import com.el_redstoniano.grids_and_trims_wow.config.GridConfig;
 import com.el_redstoniano.grids_and_trims_wow.model.ChunkProcessingContext;
 import com.el_redstoniano.grids_and_trims_wow.utils.ChunkUtils;
 import net.minecraft.block.Block;
@@ -21,6 +22,11 @@ import java.util.stream.Stream;
 
 public class ChunkGeneratorManager {
     private final boolean REMOVE_BLOCKS_BEHIND_DECO_ENTITIES = false;
+    private final GridConfig gridConfig;
+
+    public ChunkGeneratorManager(GridConfig gridConfig) {
+        this.gridConfig = gridConfig;
+    }
 
     public Set<BlockPos> searchForBlockAttachedEntities(Stream<Entity> loadedEntities) {
         Set<BlockPos> blockPosAttachedEntitySet = new HashSet<>();
@@ -48,7 +54,7 @@ public class ChunkGeneratorManager {
                 for (int z = 0; z <= 15; z++) {
                     BlockPos globalBlockPos = worldChunk.getPos().getBlockPos(x, y, z);
                     BlockPos localBlockPos = new BlockPos(x, y, z);
-                    if (ChunkUtils.shouldRemoveBlock(globalBlockPos)) { // If block will get removed
+                    if (!gridConfig.keeps(globalBlockPos)) { // If block will get removed
                         BlockState blockState = worldChunk.getBlockState(localBlockPos);
                         if (blocksBlackList.contains(blockState.getBlock()) || validatedChunkContext.isProtected(globalBlockPos)) {
                             continue; // Don't remove blacklisted/protected blocks
