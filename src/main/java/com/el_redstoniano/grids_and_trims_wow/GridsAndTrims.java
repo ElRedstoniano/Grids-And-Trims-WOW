@@ -8,10 +8,11 @@ import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.Set;
 
 public class GridsAndTrims implements ModInitializer {
 
@@ -21,7 +22,9 @@ public class GridsAndTrims implements ModInitializer {
     // It is considered best practice to use your mod id as the logger's name.
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public static ThreadLocal<ChunkGeneratorManager> threadLocalChunkManager = new ThreadLocal<>();
+    public static final ThreadLocal<Set<BlockPos>> threadLocalProtectedBlocksSet = new ThreadLocal<>();
+    private static final ChunkGeneratorManager CHUNK_MANAGER = new ChunkGeneratorManager();
+
     @Override
     public void onInitialize() {
         // This code runs as soon as Minecraft is in a mod-load-ready state.
@@ -30,8 +33,7 @@ public class GridsAndTrims implements ModInitializer {
 
         LOGGER.info("Hello Fabric world!");
 
-        ChunkGeneratorManager chunkGeneratorManager = new ChunkGeneratorManager();
-        List<Block> blocksBlackList = List.of(Blocks.END_PORTAL_FRAME/*, Blocks.CHEST*/);
+        Set<Block> blocksBlackList = Set.of(Blocks.END_PORTAL_FRAME/*, Blocks.CHEST*/);
 
 
         ServerChunkEvents.CHUNK_GENERATE.register((serverWorld, worldChunk) -> {
@@ -42,8 +44,11 @@ public class GridsAndTrims implements ModInitializer {
                 return;
             MinecraftServer server = serverWorld.getServer();
 
-            chunkGeneratorManager.startRemovingBlocks(worldChunk, server, blocksBlackList);
-            chunkGeneratorManager.clearBlockAttachedEntityHolderPosList();
+            try {
+                CHUNK_MANAGER.startRemovingBlocks(worldChunk, server, blocksBlackList, threadLocalProtectedBlocksSet.get());
+            } finally {
+                threadLocalProtectedBlocksSet.remove();
+            }
 
             serverWorld.getChunkManager().getLightingProvider().light(worldChunk, false); // Update light for new spaces
             server.send(server.createTask(() -> {
@@ -51,11 +56,14 @@ public class GridsAndTrims implements ModInitializer {
                 serverWorld.getChunkManager().getLightingProvider().light(worldChunk, false); // Update light for new spaces
                 worldChunk.setLightOn(true);
             }));
-            threadLocalChunkManager.remove();
         });
     }
 
     public static Identifier id (String name){
         return Identifier.of(MOD_ID, name);
+    }
+
+    public static ChunkGeneratorManager getChunkManager() {
+        return CHUNK_MANAGER;
     }
 }

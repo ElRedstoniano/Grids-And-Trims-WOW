@@ -13,37 +13,34 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.chunk.WorldChunk;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class ChunkGeneratorManager {
-    private boolean REMOVE_BLOCKS_BEHIND_DECO_ENTITIES = false;
+    private final boolean REMOVE_BLOCKS_BEHIND_DECO_ENTITIES = false;
 
-    private static List<BlockPos> blockAttachedEntityHolderPosList;
-    public ChunkGeneratorManager() {
-        blockAttachedEntityHolderPosList = new ArrayList<>();
-    }
-
-    public void searchForBlockAttachedEntities(Stream<Entity> loadedEntities) {
+    public Set<BlockPos> searchForBlockAttachedEntities(Stream<Entity> loadedEntities) {
+        Set<BlockPos> blockPosAttachedEntitySet = new HashSet<>();
         // Filter by which attached entities can be processed
         Predicate<Entity> filterPredicate = entity -> entity instanceof AbstractDecorationEntity;
         // Adds all the blocks that are behind the blockAttached Entity bounding box to the HolderPosList
         loadedEntities.filter(filterPredicate).forEach(entity -> {
             BlockPos.stream(AbstractDecorationEntityHelper
-                    .getAttachmentBox((AbstractDecorationEntity) entity)).forEach(blockPos -> {
-                //SkygridTestMod.LOGGER.info("-------- behind blockpos:" + blockPos + "----" + entity);
-                blockAttachedEntityHolderPosList.add(blockPos);
-            });
+                    .getAttachmentBox((AbstractDecorationEntity) entity))
+                    .forEach(blockPos -> blockPosAttachedEntitySet.add(blockPos.toImmutable()));
+            // BlockPos.stream(box) doesn't create a new BlockPos for each position, meaning that adding a mutable position to the set
+            // would lead to have the same repeated block position, which would be replaced with the last blockpos iterated (aka all the
+            // blockpos iterated are the same object).
+            // toImmutable() fixes this by creating a new copy of each BlockPos.
         });
+        return blockPosAttachedEntitySet;
     }
 
-    public void clearBlockAttachedEntityHolderPosList() {
-        blockAttachedEntityHolderPosList.clear();
-    }
-
-    public void startRemovingBlocks(WorldChunk worldChunk, MinecraftServer server, List<Block> blocksBlackList) {
+    public void startRemovingBlocks(WorldChunk worldChunk, MinecraftServer server, Set<Block> blocksBlackList, Set<BlockPos> protectedBlockPosSet) {
+        protectedBlockPosSet = protectedBlockPosSet != null ? protectedBlockPosSet : new HashSet<>(); // Avoid null checks if the chunk for
+                                                                            // some reason didn't go through the CustomChunkGeneratingMixing
         //Starting iterating over local x y z coordinates
         for (int x = 0; x <= 15; x++) {
             for (int y = worldChunk.getBottomY(); y <= worldChunk.getTopYInclusive(); y++) {
@@ -52,8 +49,8 @@ public class ChunkGeneratorManager {
                     BlockPos localBlockPos = new BlockPos(x, y, z);
                     if (ChunkUtils.shouldRemoveBlock(globalBlockPos)) { // If block will get removed
                         BlockState blockState = worldChunk.getBlockState(localBlockPos);
-                        if (blocksBlackList.contains(blockState.getBlock()) || blockAttachedEntityHolderPosList.contains(globalBlockPos)) {
-                            continue; // Don't remove blacklisted blocks
+                        if (blocksBlackList.contains(blockState.getBlock()) || protectedBlockPosSet.contains(globalBlockPos)) {
+                            continue; // Don't remove blacklisted/protected blocks
                         }
                         worldChunk.removeBlockEntity(globalBlockPos); // Removes block entity at coordinates if exists, if not nothing happens
                         worldChunk.setBlockState(localBlockPos, Blocks.AIR.getDefaultState(), 0);
@@ -84,7 +81,7 @@ public class ChunkGeneratorManager {
         Predicate<Map. Entry<BlockPos, ?>> filterPredicate = blockPosMap -> {
             BlockPos blockPos = blockPosMap.getKey();
             Block block = worldChunk.getBlockState(blockPos).getBlock();
-            return !blocksBlackList.contains(block) && !blockAttachedEntityHolderPosList.contains(blockPos) &&
+            return !blocksBlackList.contains(block) && !blockPosAttachedEntityHolderSet.contains(blockPos) &&
                     !ChunkGeneratorManager.shouldBlockStay(blockPos);
         };
         worldChunk.getBlockEntities().entrySet().stream().filter(filterPredicate)
