@@ -1,0 +1,15 @@
+{
+  "createWorld.tab.grids_and_trims.title" : "Grids&Trims",
+  "selectWorld.grids_and_trims.modify_predicates": "Modificar predicados de generación",
+  "selectWorld.grids_and_trims.manage_dimension_predicates": "Gestionar predicados de dimensiones",
+
+  "selectWorld.grids_and_trims.modify_predicates.title": "Predicados de generación",
+
+  "grid_and_trims.widgets.category.predicate": "Predicados",
+  "grid_and_trims.widgets.category.predicate.x_axis": "Eje X",
+  "grid_and_trims.widgets.category.predicate.y_axis": "Eje Y",
+  "grid_and_trims.widgets.category.predicate.z_axis": "Eje Z",
+
+  "grid_and_trims.widgets.category.predicate.type.grids": "Cuadrícula",
+  "grid_and_trims.widgets.category.predicate.type.advanced": "Avanzado"
+}

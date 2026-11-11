@@ -1,0 +1,15 @@
+{
+  "createWorld.tab.grids_and_trims.title" : "Grids&Trims",
+  "selectWorld.grids_and_trims.modify_predicates": "Modify generation predicates",
+  "selectWorld.grids_and_trims.manage_dimension_predicates": "Manage dimension predicates",
+
+  "selectWorld.grids_and_trims.modify_predicates.title": "Generation predicates",
+
+  "grid_and_trims.widgets.category.predicate": "Predicates",
+  "grid_and_trims.widgets.category.predicate.x_axis": "X axis",
+  "grid_and_trims.widgets.category.predicate.y_axis": "Y axis",
+  "grid_and_trims.widgets.category.predicate.z_axis": "Z axis",
+
+  "grid_and_trims.widgets.category.predicate.type.grids": "Grids",
+  "grid_and_trims.widgets.category.predicate.type.advanced": "Advanced"
+}

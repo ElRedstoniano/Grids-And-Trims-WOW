@@ -17,7 +17,7 @@ public class ChunkUtils {
     private static boolean calculateGridPredicate(int posIndex, int posOffset, int blockSpaces, int blocksIslandsSize) {
         posIndex += posOffset;
         if (blocksIslandsSize <= 1)
-            return Math.ceilMod(posIndex, blockSpaces+1) != 0;
+            return Math.floorMod(posIndex, blockSpaces+1) != 0;
         int modulus = Math.floorMod(posIndex, blockSpaces+blocksIslandsSize);
         return !(modulus >= 0 && modulus <= (blocksIslandsSize-1));
     }

@@ -31,7 +31,7 @@ public class GridsAndTrims implements ModInitializer {
         LOGGER.info("Hello Fabric world!");
 
         ChunkGeneratorManager chunkGeneratorManager = new ChunkGeneratorManager();
-        List<Block> blocksBlackList = List.of(Blocks.END_PORTAL_FRAME, Blocks.CHEST);
+        List<Block> blocksBlackList = List.of(Blocks.END_PORTAL_FRAME/*, Blocks.CHEST*/);
 
 
         ServerChunkEvents.CHUNK_GENERATE.register((serverWorld, worldChunk) -> {

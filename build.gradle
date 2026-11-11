@@ -1,3 +1,5 @@
+import net.fabricmc.loom.extension.LoomGradleExtensionApiImpl
+
 plugins {
     id 'fabric-loom' version '1.11-SNAPSHOT'
     id 'maven-publish'
@@ -74,6 +76,12 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.archivesBaseName}"}
     }
+}
+
+loom {
+    (it as LoomGradleExtensionApiImpl).intermediaryUrl.set(
+            "https://maven3.fabricmc.net/net/fabricmc/intermediary/%1\$s/intermediary-%1\$s-v2.jar"
+    )
 }
 
 // configure the maven publication
