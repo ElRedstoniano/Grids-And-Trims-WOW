@@ -1,6 +1,7 @@
 package com.el_redstoniano.grids_and_trims_wow;
 
 import com.el_redstoniano.grids_and_trims_wow.managers.ChunkGeneratorManager;
+import com.el_redstoniano.grids_and_trims_wow.model.ChunkProcessingContext;
 import com.el_redstoniano.grids_and_trims_wow.utils.ChunkUtils;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
@@ -22,7 +23,7 @@ public class GridsAndTrims implements ModInitializer {
     // It is considered best practice to use your mod id as the logger's name.
     // That way, it's clear which mod wrote info, warnings, and errors.
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
-    public static final ThreadLocal<Set<BlockPos>> threadLocalProtectedBlocksSet = new ThreadLocal<>();
+    public static final ThreadLocal<ChunkProcessingContext> threadLocalChunkContext = new ThreadLocal<>();
     private static final ChunkGeneratorManager CHUNK_MANAGER = new ChunkGeneratorManager();
 
     @Override
@@ -45,9 +46,10 @@ public class GridsAndTrims implements ModInitializer {
             MinecraftServer server = serverWorld.getServer();
 
             try {
-                CHUNK_MANAGER.startRemovingBlocks(worldChunk, server, blocksBlackList, threadLocalProtectedBlocksSet.get());
+                ChunkProcessingContext context = threadLocalChunkContext.get();
+                CHUNK_MANAGER.startRemovingBlocks(worldChunk, server, blocksBlackList, context);
             } finally {
-                threadLocalProtectedBlocksSet.remove();
+                threadLocalChunkContext.remove();
             }
 
             serverWorld.getChunkManager().getLightingProvider().light(worldChunk, false); // Update light for new spaces

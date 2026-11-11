@@ -1,5 +1,6 @@
 package com.el_redstoniano.grids_and_trims_wow.managers;
 
+import com.el_redstoniano.grids_and_trims_wow.model.ChunkProcessingContext;
 import com.el_redstoniano.grids_and_trims_wow.utils.ChunkUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -38,9 +39,9 @@ public class ChunkGeneratorManager {
         return blockPosAttachedEntitySet;
     }
 
-    public void startRemovingBlocks(WorldChunk worldChunk, MinecraftServer server, Set<Block> blocksBlackList, Set<BlockPos> protectedBlockPosSet) {
-        protectedBlockPosSet = protectedBlockPosSet != null ? protectedBlockPosSet : new HashSet<>(); // Avoid null checks if the chunk for
-                                                                            // some reason didn't go through the CustomChunkGeneratingMixing
+    public void startRemovingBlocks(WorldChunk worldChunk, MinecraftServer server, Set<Block> blocksBlackList, ChunkProcessingContext chunkContext) {
+        ChunkProcessingContext validatedChunkContext = chunkContext != null ? chunkContext : new ChunkProcessingContext();
+        // Avoid null checks if the chunk for some reason didn't go through the CustomChunkGeneratingMixin
         //Starting iterating over local x y z coordinates
         for (int x = 0; x <= 15; x++) {
             for (int y = worldChunk.getBottomY(); y <= worldChunk.getTopYInclusive(); y++) {
@@ -49,7 +50,7 @@ public class ChunkGeneratorManager {
                     BlockPos localBlockPos = new BlockPos(x, y, z);
                     if (ChunkUtils.shouldRemoveBlock(globalBlockPos)) { // If block will get removed
                         BlockState blockState = worldChunk.getBlockState(localBlockPos);
-                        if (blocksBlackList.contains(blockState.getBlock()) || protectedBlockPosSet.contains(globalBlockPos)) {
+                        if (blocksBlackList.contains(blockState.getBlock()) || validatedChunkContext.isProtected(globalBlockPos)) {
                             continue; // Don't remove blacklisted/protected blocks
                         }
                         worldChunk.removeBlockEntity(globalBlockPos); // Removes block entity at coordinates if exists, if not nothing happens
