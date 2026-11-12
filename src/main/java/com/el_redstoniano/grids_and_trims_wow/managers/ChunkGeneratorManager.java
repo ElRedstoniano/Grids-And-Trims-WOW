@@ -2,8 +2,10 @@ package com.el_redstoniano.grids_and_trims_wow.managers;
 
 import com.el_redstoniano.grids_and_trims_wow.config.GridConfig;
 import com.el_redstoniano.grids_and_trims_wow.model.ChunkProcessingContext;
+import com.el_redstoniano.grids_and_trims_wow.rules.blocks.BlockProtectionRule;
+import com.el_redstoniano.grids_and_trims_wow.rules.dimensions.DimensionRule;
+import com.el_redstoniano.grids_and_trims_wow.rules.entity_types.EntityTypeRule;
 import com.el_redstoniano.grids_and_trims_wow.utils.ChunkUtils;
-import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.LeavesBlock;
@@ -17,35 +19,43 @@ import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class ChunkGeneratorManager {
-    private final boolean REMOVE_BLOCKS_BEHIND_DECO_ENTITIES = false;
     private final GridConfig gridConfig;
+    private final BlockProtectionRule rules;
+    private final DimensionRule dimensionRules;
+    private final EntityTypeRule entityTypeRules;
 
-    public ChunkGeneratorManager(GridConfig gridConfig) {
+    public ChunkGeneratorManager(GridConfig gridConfig, BlockProtectionRule blockRules, DimensionRule dimensionRules, EntityTypeRule entityTypeRules) {
         this.gridConfig = gridConfig;
+        this.rules = blockRules;
+        this.dimensionRules = dimensionRules;
+        this.entityTypeRules = entityTypeRules;
     }
 
-    public Set<BlockPos> searchForBlockAttachedEntities(Stream<Entity> loadedEntities) {
+    public Set<BlockPos> searchForBlockAttachedEntities(Stream<Entity> loadedEntities, ChunkProcessingContext chunkContext) {
         Set<BlockPos> blockPosAttachedEntitySet = new HashSet<>();
-        // Filter by which attached entities can be processed
-        Predicate<Entity> filterPredicate = entity -> entity instanceof AbstractDecorationEntity;
-        // Adds all the blocks that are behind the blockAttached Entity bounding box to the HolderPosList
-        loadedEntities.filter(filterPredicate).forEach(entity -> {
-            BlockPos.stream(AbstractDecorationEntityHelper
-                    .getAttachmentBox((AbstractDecorationEntity) entity))
-                    .forEach(blockPos -> blockPosAttachedEntitySet.add(blockPos.toImmutable()));
-            // BlockPos.stream(box) doesn't create a new BlockPos for each position, meaning that adding a mutable position to the set
-            // would lead to have the same repeated block position, which would be replaced with the last blockpos iterated (aka all the
-            // blockpos iterated are the same object).
-            // toImmutable() fixes this by creating a new copy of each BlockPos.
-        });
+        if (dimensionRules.matches(chunkContext.getDimensionId())) {
+            // Filter by which attached entities can be processed
+            //Predicate<Entity> filterPredicate = entity -> entity instanceof AbstractDecorationEntity;
+
+            // Adds all the blocks that are behind the blockAttached Entity bounding box to the HolderPosList
+            loadedEntities.filter(entityTypeRules::matches).forEach(entity -> {
+                if (entity instanceof AbstractDecorationEntity decorationEntity)
+                    BlockPos.stream(AbstractDecorationEntityHelper
+                            .getAttachmentBox(decorationEntity)) // Avoid casting like (AbstractDecorationEntity) entity,
+                            .forEach(blockPos -> blockPosAttachedEntitySet.add(blockPos.toImmutable()));
+                    // BlockPos.stream(box) doesn't create a new BlockPos for each position, meaning that adding a mutable position to the set
+                    // would lead to have the same repeated block position, which would be replaced with the last blockpos iterated (aka all the
+                    // blockpos iterated are the same object).
+                    // toImmutable() fixes this by creating a new copy of each BlockPos.
+            });
+        }
         return blockPosAttachedEntitySet;
     }
 
-    public void startRemovingBlocks(WorldChunk worldChunk, MinecraftServer server, Set<Block> blocksBlackList, ChunkProcessingContext chunkContext) {
+    public void startRemovingBlocks(WorldChunk worldChunk, MinecraftServer server, ChunkProcessingContext chunkContext) {
         ChunkProcessingContext validatedChunkContext = chunkContext != null ? chunkContext : new ChunkProcessingContext();
         // Avoid null checks if the chunk for some reason didn't go through the CustomChunkGeneratingMixin
         //Starting iterating over local x y z coordinates
@@ -56,8 +66,8 @@ public class ChunkGeneratorManager {
                     BlockPos localBlockPos = new BlockPos(x, y, z);
                     if (!gridConfig.keeps(globalBlockPos)) { // If block will get removed
                         BlockState blockState = worldChunk.getBlockState(localBlockPos);
-                        if (blocksBlackList.contains(blockState.getBlock()) || validatedChunkContext.isProtected(globalBlockPos)) {
-                            continue; // Don't remove blacklisted/protected blocks
+                        if (rules.protects(globalBlockPos, blockState, validatedChunkContext)) {
+                            continue; // Don't remove blocks that meets rules built from the ProtectionRuleFactory
                         }
                         worldChunk.removeBlockEntity(globalBlockPos); // Removes block entity at coordinates if exists, if not nothing happens
                         worldChunk.setBlockState(localBlockPos, Blocks.AIR.getDefaultState(), 0);
@@ -81,41 +91,4 @@ public class ChunkGeneratorManager {
             return blockAttachedEntity.getBoundingBox().offset(blockAttachedEntity.getHorizontalFacing().getUnitVector().mul(-0.5F)).contract(1.0E-7);
         }
     }
-
-    // Outdated: Can cause ArrayIndexOutOfBoundsException as this seems to be not thread safe, instead worldChunk.removeBlockEntity(pos) is used in the main method
-    /*public void removeUnwantedBlockEntities(WorldChunk worldChunk, List<Block> blocksBlackList) {
-        //Predicate<Block> blockBlackListPredicate = blockBlackList::contains;
-        Predicate<Map. Entry<BlockPos, ?>> filterPredicate = blockPosMap -> {
-            BlockPos blockPos = blockPosMap.getKey();
-            Block block = worldChunk.getBlockState(blockPos).getBlock();
-            return !blocksBlackList.contains(block) && !blockPosAttachedEntityHolderSet.contains(blockPos) &&
-                    !ChunkGeneratorManager.shouldBlockStay(blockPos);
-        };
-        worldChunk.getBlockEntities().entrySet().stream().filter(filterPredicate)
-                .forEach(blockPosBlockEntityEntry -> worldChunk.removeBlockEntity(blockPosBlockEntityEntry.getKey()));
-        worldChunk.updateAllBlockEntities();
-    }*/
-
-    /*public static boolean isEntitySafeFromFallingIntoVoid(Entity entity) {
-        return entitySafeFromFallingIntoVoidPredicate.test(entity.getBlockPos());
-    }*/
-
-    /*public void removeUnwantedEntities(WorldChunk worldChunk) {
-        Predicate<Entity> filterPredicate = entity -> isEntitySafeFromFallingIntoVoid(entity) && entity.isAlive();
-
-        BlockPos startBlockPos = worldChunk.getPos().getStartPos();
-        //BlockPos endBlockPos = new BlockPos(worldChunk.getPos().getEndX(), worldChunk.getTopYInclusive(), worldChunk.getPos().getEndX());
-        worldChunk.getWorld().getEntitiesByClass(Entity.class,
-                Box.from(Vec3d.of(startBlockPos)).expand(15, worldChunk.getTopYInclusive(), 15),
-                 filterPredicate)
-                .forEach(entity -> {
-                    if (entity instanceof ItemFrameEntity itemFrameEntity) {
-                        this.blockAttachedEntityHolderPos.add(itemFrameEntity.getBlockPos());
-                        //itemFrameEntity.getAttachedBlockPos()
-                        //return;
-                    } else {
-                         entity.discard();
-                    }
-                });
-    }*/
 }

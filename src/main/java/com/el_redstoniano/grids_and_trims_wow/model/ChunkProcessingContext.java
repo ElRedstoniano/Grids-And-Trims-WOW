@@ -1,5 +1,6 @@
 package com.el_redstoniano.grids_and_trims_wow.model;
 
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Collection;
@@ -10,6 +11,15 @@ import java.util.Set;
 public class ChunkProcessingContext {
 
     private final Set<BlockPos> protectedBlocksPos = new HashSet<>();
+    private Identifier dimensionId;
+
+    public void assignDimensionId(Identifier dimensionId) {
+        this.dimensionId = dimensionId;
+    }
+
+    public Identifier getDimensionId() {
+        return this.dimensionId;
+    }
 
     public ChunkProcessingContext() {}
 
