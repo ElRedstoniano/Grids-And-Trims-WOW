@@ -39,7 +39,7 @@ public abstract class CustomChunkGeneratingMixin {
         ChunkProcessingContext chunkContext = GridsAndTrims.threadLocalChunkContext.get();
         Optional<RegistryKey<DimensionType>> dimensionTypeOptional = world.getDimensionEntry().getKey();
 
-        chunkContext.assignDimensionId(dimensionTypeOptional.map(RegistryKey::getRegistry).orElse(null));
+        chunkContext.assignDimensionId(dimensionTypeOptional.map(RegistryKey::getValue).orElse(null));
 
         Supplier<Stream<Entity>> supplier = () -> original.call(entities, world, reason);
         // Once the stream has been processed, it gets terminated and no more operations can be done, so it must be provided as a supplier as a workaround instead of doing original.call() two times
