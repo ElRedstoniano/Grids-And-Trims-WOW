@@ -35,8 +35,8 @@ public class GridsAndTrims implements ModInitializer {
     private final static boolean REMOVE_BLOCKS_BEHIND_DECO_ENTITIES = false;
     private final static Set<Block> blocksBlackList = Set.of(Blocks.END_PORTAL_FRAME/*, Blocks.CHEST*/);
 
-    private final static Identifier OVERWORLD_DIMENSION_ID = DimensionTypes.OVERWORLD.getRegistry();
-    private final static Identifier END_DIMENSION_ID = DimensionTypes.THE_END.getRegistry();
+    private final static Identifier OVERWORLD_DIMENSION_ID = DimensionTypes.OVERWORLD.getValue();
+    private final static Identifier END_DIMENSION_ID = DimensionTypes.THE_END.getValue();
 
     private final static Set<EntityType<? extends Entity>> entityTypesSet = Set.of(EntityType.ITEM_FRAME);
 
