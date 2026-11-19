@@ -13,6 +13,6 @@ public class NamedDimensionRule implements DimensionRule{
 
     @Override
     public boolean matches(Identifier identifier) {
-        return idsToCheck.contains(identifier);
+        return identifier != null && idsToCheck.contains(identifier);
     }
 }
