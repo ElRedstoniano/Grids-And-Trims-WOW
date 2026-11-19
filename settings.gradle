@@ -4,6 +4,7 @@ pluginManagement {
             name = 'Fabric'
             url = 'https://maven3.fabricmc.net/' // 'https://maven.fabricmc.net/' was blocked here for some reason, the new mirror seems to work
         }
+        mavenCentral()
         gradlePluginPortal()
     }
 }
