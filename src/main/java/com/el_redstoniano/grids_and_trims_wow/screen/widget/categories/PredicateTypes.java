@@ -1,6 +1,7 @@
 package com.el_redstoniano.grids_and_trims_wow.screen.widget.categories;
 
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 
 public enum PredicateTypes implements EnumSubcategory {
     GRIDS("type.grids"),
@@ -21,5 +22,5 @@ public enum PredicateTypes implements EnumSubcategory {
         return getParentCategory().getCategoryTranslationKey() + "." + name;
     }
 
-    public Text getTranslationText() { return Text.translatable(getTranslationKey()); }
+    public MutableComponent getTranslationText() { return Component.translatable(getTranslationKey()); }
 }

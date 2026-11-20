@@ -10,13 +10,17 @@ import com.el_redstoniano.grids_and_trims_wow.rules.entity_types.EntityTypeRuleF
 import com.el_redstoniano.grids_and_trims_wow.utils.ChunkUtils;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerChunkEvents;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
+import net.minecraft.data.worldgen.DimensionTypes;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.dimension.DimensionTypes;
+import net.minecraft.server.TickTask;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,10 +39,10 @@ public class GridsAndTrims implements ModInitializer {
     private final static boolean REMOVE_BLOCKS_BEHIND_DECO_ENTITIES = false;
     private final static Set<Block> blocksBlackList = Set.of(Blocks.END_PORTAL_FRAME/*, Blocks.CHEST*/);
 
-    private final static Identifier OVERWORLD_DIMENSION_ID = DimensionTypes.OVERWORLD.getValue();
-    private final static Identifier END_DIMENSION_ID = DimensionTypes.THE_END.getValue();
+    private final static Identifier OVERWORLD_DIMENSION_ID = /*BuiltinDimensionTypes*/Level.OVERWORLD.identifier();
+    private final static Identifier END_DIMENSION_ID = Level.END.identifier();
 
-    private final static Set<EntityType<? extends Entity>> entityTypesSet = Set.of(EntityType.ITEM_FRAME);
+    private final static Set<EntityType<? extends Entity>> entityTypesSet = Set.of(EntityTypes.ITEM_FRAME);
 
     private static final ChunkGeneratorManager CHUNK_MANAGER = new ChunkGeneratorManager(
             GridConfig.DEFAULT,
@@ -57,32 +61,38 @@ public class GridsAndTrims implements ModInitializer {
 
         LOGGER.info("Hello Fabric world!");
 
-        ServerChunkEvents.CHUNK_GENERATE.register((serverWorld, worldChunk) -> {
+        //ServerChunkEvents.CHUNK_GENERATE.register((serverLevel, levelChunk) -> {
+        ServerChunkEvents.CHUNK_LOAD.register((serverLevel, levelChunk, generated) -> {
+            if (!generated) return;
+            //if (levelChunk.getInhabitedTime() != 0) {
+            //    return; // Minecraft no longer distinguishes in a simple and synchronous way between "loading from disc"
+                // and "finishing generation" within the same server thread, due to multithreaded chunk generation (async chunk generation).
+            //}
             //ChunkSection[] chunkSections = worldChunk.getSectionArray();
             //int posXChunk = worldChunk.getPos().x + 1; // if ((x * posXChunk) % 5 != 0)
             //int posZChunk = worldChunk.getPos().z + 1;
-            if (!ChunkUtils.isModCustomWorldType(serverWorld))
+            if (!ChunkUtils.isModCustomWorldType(serverLevel))
                 return;
-            MinecraftServer server = serverWorld.getServer();
+            MinecraftServer server = serverLevel.getServer();
 
             try {
                 ChunkProcessingContext context = threadLocalChunkContext.get();
-                CHUNK_MANAGER.startRemovingBlocks(worldChunk, server, context);
+                CHUNK_MANAGER.startRemovingBlocks(levelChunk, server, context);
             } finally {
                 threadLocalChunkContext.remove();
             }
 
-            serverWorld.getChunkManager().getLightingProvider().light(worldChunk, false); // Update light for new spaces
-            server.send(server.createTask(() -> {
-                //serverWorld.getChunkManager().getLightingProvider().propagateLight(worldChunk.getPos());
-                serverWorld.getChunkManager().getLightingProvider().light(worldChunk, false); // Update light for new spaces
-                worldChunk.setLightOn(true);
+            serverLevel.getChunkSource().getLightEngine().lightChunk(levelChunk, false); // Update light for new spaces
+            server.schedule(new TickTask(server.getTickCount(), () -> {
+                //serverLevel.getChunkManager().getLightingProvider().propagateLight(worldChunk.getPos());
+                serverLevel.getChunkSource().getLightEngine().lightChunk(levelChunk, false); // Update light for new spaces
+                levelChunk.setLightCorrect(true);
             }));
         });
     }
 
     public static Identifier id (String name){
-        return Identifier.of(MOD_ID, name);
+        return Identifier.fromNamespaceAndPath(MOD_ID, name);
     }
 
     public static ChunkGeneratorManager getChunkManager() {

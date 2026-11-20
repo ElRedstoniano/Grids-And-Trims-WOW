@@ -2,7 +2,7 @@ package com.el_redstoniano.grids_and_trims_wow.screen.widget;
 
 import com.el_redstoniano.grids_and_trims_wow.screen.widget.categories.EnumSubcategory;
 import com.google.common.collect.ImmutableList;
-import net.minecraft.client.MinecraftClient;
+/*import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.Element;
 import net.minecraft.client.gui.Selectable;
@@ -13,19 +13,31 @@ import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.CyclingButtonWidget;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
+import net.minecraft.util.Colors;*/
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 public class CategorizedCyclicButtonWidget<T extends EnumSubcategory> extends ListNamedWidget {
     protected Screen screen;
-    protected Text name;
-    private final MinecraftClient client;
-    private final CyclingButtonWidget<T> predicatesCyclingButton;
+    protected Component name;
+    private final Minecraft client;
+    private final CycleButton<T> predicatesCyclingButton;
 
-    public CategorizedCyclicButtonWidget(Text name, @Nullable List<OrderedText> description, MinecraftClient client,
-                                         @Nullable CyclingButtonWidget<T> predicatesCyclingButton) {
+    public CategorizedCyclicButtonWidget(Component name, @Nullable List<FormattedCharSequence> description, Minecraft client,
+                                         @Nullable CycleButton<T> predicatesCyclingButton) {
         super(description, name, client);
         //this.screen = screen;
         this.name = name;
@@ -35,33 +47,36 @@ public class CategorizedCyclicButtonWidget<T extends EnumSubcategory> extends Li
     }
 
     @Override
-    public List<? extends Selectable> selectableChildren() {
-        return ImmutableList.of(new Selectable() {
+    public @NonNull List<? extends NarratableEntry> narratables() {
+        return ImmutableList.of(new NarratableEntry() {
+
             @Override
-            public SelectionType getType() {
-                return SelectionType.NONE;
+            public void updateNarration(@NonNull NarrationElementOutput output) {
+                output.add(NarratedElementType.TITLE, name);
             }
 
             @Override
-            public void appendNarrations(NarrationMessageBuilder builder) {
-                builder.put(NarrationPart.TITLE, name);
+            public @NonNull NarrationPriority narrationPriority() {
+                return NarratableEntry.NarrationPriority.NONE;
             }
         });
     }
 
     @Override
-    public List<? extends Element> children() {
+    public @NonNull List<? extends GuiEventListener> children() {
         return List.of(predicatesCyclingButton);
     }
 
     @Override
-    public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickProgress) {
+    public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float tickProgress) {
+        //super.extractContent(graphics, mouseX, mouseY, hovered, a);
         //context.drawCenteredTextWithShadow(client.textRenderer, this.name, x + entryWidth / 2, y + 5, Colors.WHITE);
-        context.drawWrappedTextWithShadow(client.textRenderer, this.name, (x + entryWidth / 2) - client.textRenderer.getWidth(name), y + 5, 175, Colors.WHITE);
+        graphics.textWithWordWrap(client.font, this.name, (getX() + getWidth() / 2) - client.font.width(name),
+                getY() + 5, 175, CommonColors.WHITE);
         if (predicatesCyclingButton != null) {
-            this.predicatesCyclingButton.setX(x);
-            this.predicatesCyclingButton.setY(y + predicatesCyclingButton.getHeight() + 20);
-            this.predicatesCyclingButton.render(context, mouseX, mouseY, tickProgress);
+            this.predicatesCyclingButton.setX(getX());
+            this.predicatesCyclingButton.setY(getY() + predicatesCyclingButton.getHeight() + 20);
+            this.predicatesCyclingButton.extractRenderState(graphics, mouseX, mouseY, tickProgress);
         }
     }
 }

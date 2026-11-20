@@ -1,6 +1,6 @@
 package com.el_redstoniano.grids_and_trims_wow.config;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 public record GridConfig(AxisGridConfig x, AxisGridConfig y, AxisGridConfig z) {
     public static final GridConfig DEFAULT = new GridConfig(

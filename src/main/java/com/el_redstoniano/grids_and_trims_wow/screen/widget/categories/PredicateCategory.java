@@ -1,13 +1,14 @@
 package com.el_redstoniano.grids_and_trims_wow.screen.widget.categories;
 
-import net.minecraft.text.Text;
+import net.minecraft.client.renderer.feature.TextFeatureRenderer;
+import net.minecraft.network.chat.Component;
 
 public enum PredicateCategory implements EnumSubcategory {
     X_AXIS("x_axis"),
     Y_AXIS("y_axis"),
     Z_AXIS("z_axis");
 
-    private String name;
+    private final String name;
 
     private PredicateCategory(String name) {
         this.name = name;
@@ -16,7 +17,7 @@ public enum PredicateCategory implements EnumSubcategory {
     @Override
     public String getTranslationKey() { return getParentCategory().getCategoryTranslationKey() + "." + name; }
 
-    public Text getTranslationText() { return Text.translatable(getTranslationKey()); }
+    public Component getTranslationText() { return Component.translatable(getTranslationKey()); }
 
     @Override
     public ScreenCategories getParentCategory() {

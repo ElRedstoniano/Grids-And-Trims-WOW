@@ -1,8 +1,6 @@
 package com.el_redstoniano.grids_and_trims_wow.rules.dimensions;
 
-import com.el_redstoniano.grids_and_trims_wow.model.ChunkProcessingContext;
-import net.minecraft.util.Identifier;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.resources.Identifier;
 
 import java.util.Arrays;
 

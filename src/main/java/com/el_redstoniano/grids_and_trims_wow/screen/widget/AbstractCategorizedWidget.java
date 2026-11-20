@@ -3,19 +3,20 @@ package com.el_redstoniano.grids_and_trims_wow.screen.widget;
 import com.el_redstoniano.grids_and_trims_wow.screen.widget.categories.EnumSubcategory;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.gui.widget.ElementListWidget;
-import net.minecraft.text.OrderedText;
+import net.minecraft.client.gui.components.ContainerObjectSelectionList;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 @Environment(value= EnvType.CLIENT)
-public abstract class AbstractCategorizedWidget extends ElementListWidget.Entry<AbstractCategorizedWidget> {
+public abstract class AbstractCategorizedWidget extends ContainerObjectSelectionList.Entry<AbstractCategorizedWidget> implements GuiEventListener {
 
     @Nullable
-    public final List<OrderedText> description;
+    public final List<FormattedCharSequence> description;
 
-    protected AbstractCategorizedWidget(@Nullable List<OrderedText> description) {
+    protected AbstractCategorizedWidget(@Nullable List<FormattedCharSequence> description) {
         this.description = description;
     }
 

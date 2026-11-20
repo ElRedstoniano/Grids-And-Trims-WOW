@@ -1,7 +1,6 @@
 package com.el_redstoniano.grids_and_trims_wow.rules.blocks;
 
-
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.Block;
 
 import java.util.Set;
 

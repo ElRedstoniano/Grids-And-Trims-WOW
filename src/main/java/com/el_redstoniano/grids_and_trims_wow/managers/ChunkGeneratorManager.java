@@ -6,12 +6,13 @@ import com.el_redstoniano.grids_and_trims_wow.rules.blocks.BlockProtectionRule;
 import com.el_redstoniano.grids_and_trims_wow.rules.dimensions.DimensionRule;
 import com.el_redstoniano.grids_and_trims_wow.rules.entity_types.EntityTypeRule;
 import com.el_redstoniano.grids_and_trims_wow.utils.ChunkUtils;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LeavesBlock;
-import net.minecraft.entity.Entity;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.server.TickTask;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,40 +43,40 @@ public class ChunkGeneratorManager {
                 .collect(Collectors.toSet());
     }
 
-    public void startRemovingBlocks(WorldChunk worldChunk, MinecraftServer server, ChunkProcessingContext chunkContext) {
+    public void startRemovingBlocks(LevelChunk worldChunk, MinecraftServer server, ChunkProcessingContext chunkContext) {
         ChunkProcessingContext validatedChunkContext = chunkContext != null ? chunkContext : new ChunkProcessingContext();
         // Avoid null checks if the chunk for some reason didn't go through the CustomChunkGeneratingMixin
 
         //Starting iterating over local x y z coordinates
         for (int x = 0; x <= 15; x++) {
-            for (int y = worldChunk.getBottomY(); y <= worldChunk.getTopYInclusive(); y++) {
+            for (int y = worldChunk.getMinY(); y <= worldChunk.getMaxY(); y++) {
                 for (int z = 0; z <= 15; z++) {
-                    BlockPos globalBlockPos = worldChunk.getPos().getBlockPos(x, y, z);
+                    BlockPos globalBlockPos = worldChunk.getPos().getBlockAt(x, y, z);
                     processPosition(globalBlockPos, x, y, z, worldChunk, server, validatedChunkContext);
                 }
             }
         }
     }
 
-    private void processPosition(BlockPos globalBlockPos, int x, int y, int z, WorldChunk worldChunk,
+    private void processPosition(BlockPos globalBlockPos, int x, int y, int z, LevelChunk levelChunk,
                                  MinecraftServer server, ChunkProcessingContext chunkContext) {
         BlockPos localBlockPos = new BlockPos(x, y, z);
         if (!gridConfig.keeps(globalBlockPos)) { // If block will get removed
-            BlockState blockState = worldChunk.getBlockState(localBlockPos);
+            BlockState blockState = levelChunk.getBlockState(localBlockPos);
             if (!rules.protects(globalBlockPos, blockState, chunkContext)) {
                 // Don't remove blocks that meets rules built from the ProtectionRuleFactory
-                ChunkUtils.removeBlock(globalBlockPos, localBlockPos, worldChunk);
+                ChunkUtils.removeBlock(globalBlockPos, localBlockPos, levelChunk);
             }
         } else { // Checking non-replaced block areas
-            BlockState blockState = worldChunk.getBlockState(localBlockPos);
-            scheduleLeavesPersistent(blockState, localBlockPos, server, worldChunk);
+            BlockState blockState = levelChunk.getBlockState(localBlockPos);
+            scheduleLeavesPersistent(blockState, localBlockPos, server, levelChunk);
         }
     }
 
-    private void scheduleLeavesPersistent(BlockState blockState, BlockPos localBlockPos, MinecraftServer server, WorldChunk worldChunk) {
+    private void scheduleLeavesPersistent(BlockState blockState, BlockPos localBlockPos, MinecraftServer server, LevelChunk levelChunk) {
         if (blockState.getBlock() instanceof LeavesBlock leavesBlock) { // Check if block is leaves
-            server.send(server.createTask(() -> {
-                ChunkUtils.setLeavesPersistent(worldChunk, localBlockPos, leavesBlock);
+            server.schedule(new TickTask(server.getTickCount(), () -> {
+                ChunkUtils.setLeavesPersistent(levelChunk, localBlockPos, leavesBlock);
                 //worldChunk.setBlockState(blockPos, blockState.withIfExists(Properties.PERSISTENT, true));
             }));  // Changing leaves persistent state to true 1 tick after the chunk is loaded.
             // If this is done earlier, the game/world loading process will suffer a deadlock

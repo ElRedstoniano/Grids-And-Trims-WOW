@@ -3,30 +3,32 @@ package com.el_redstoniano.grids_and_trims_wow.screen;
 import com.el_redstoniano.grids_and_trims_wow.GridsAndTrims;
 import com.el_redstoniano.grids_and_trims_wow.screen.widget.AbstractCategorizedWidget;
 import com.el_redstoniano.grids_and_trims_wow.screen.widget.CategorizedCyclicButtonWidget;
-import com.el_redstoniano.grids_and_trims_wow.screen.widget.TextCategoryWidget;
 import com.el_redstoniano.grids_and_trims_wow.screen.widget.categories.PredicateCategory;
 import com.el_redstoniano.grids_and_trims_wow.screen.widget.categories.PredicateTypes;
 import com.el_redstoniano.grids_and_trims_wow.screen.widget.predicates.PredicateWidget;
 import com.google.common.collect.Maps;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.*;
-import net.minecraft.screen.ScreenTexts;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.ContainerObjectSelectionList;
+import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
+import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.FormattedCharSequence;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class WorldGenerationPredicatesScreen extends Screen {
-    private static final Text WORLD_PREDICATES_SCREEN_TITLE = Text.translatable("selectWorld.grids_and_trims.modify_predicates.title");
+    private static final Component WORLD_PREDICATES_SCREEN_TITLE = Component.translatable("selectWorld.grids_and_trims.modify_predicates.title");
 
-    private final ThreePartsLayoutWidget layout = new ThreePartsLayoutWidget(this);
+    private final HeaderAndFooterLayout layout = new HeaderAndFooterLayout(this);
     private PredicatesListWidget predicatesListWidget;
     private final Screen parent;
 
@@ -37,38 +39,36 @@ public class WorldGenerationPredicatesScreen extends Screen {
 
     @Override
     protected void init() {
-        this.layout.addHeader(WORLD_PREDICATES_SCREEN_TITLE, this.textRenderer);
-        predicatesListWidget = this.layout.addBody(new PredicatesListWidget());
+        this.layout.addTitleHeader(WORLD_PREDICATES_SCREEN_TITLE, this.font);
+        predicatesListWidget = this.layout.addToContents(new PredicatesListWidget());
         //directionalBodyLayoutWidget.add();
-        DirectionalLayoutWidget directionalLayoutWidget = this.layout.addFooter(DirectionalLayoutWidget.horizontal().spacing(8));
-        directionalLayoutWidget.add(ButtonWidget.builder(ScreenTexts.DONE, button -> this.close()).build());
-        directionalLayoutWidget.add(ButtonWidget.builder(ScreenTexts.CANCEL, button -> this.close()).build());
-        this.layout.forEachChild(child -> {
-            child.setNavigationOrder(1);
-            this.addDrawableChild(child);
+        LinearLayout directionalLayoutWidget = this.layout.addToFooter(LinearLayout.horizontal().spacing(8));
+        directionalLayoutWidget.addChild(Button.builder(CommonComponents.GUI_DONE, button -> this.onClose()).build());
+        directionalLayoutWidget.addChild(Button.builder(CommonComponents.GUI_CANCEL, button -> this.onClose()).build());
+        this.layout.visitWidgets(child -> {
+            child.setTabOrderGroup(1);
+            this.addRenderableWidget(child);
         });
-        this.refreshWidgetPositions();
+        this.repositionElements();
     }
 
     //private void onCloseScreen() {}
 
-    public void close() {
-        if (client != null) {
-            client.setScreen(this.parent);
-        }
+    public void onClose() {
+        this.minecraft.gui.setScreen(this.parent);
     }
 
-    protected void refreshWidgetPositions() {
-        this.layout.refreshPositions();
+    protected void repositionElements() {
+        this.layout.arrangeElements();
         if (this.predicatesListWidget != null) {
-            this.predicatesListWidget.position(this.width, this.layout);
+            this.predicatesListWidget.updateSize(this.width, this.layout);
         }
 
     }
 
-    public class PredicatesListWidget extends ElementListWidget<AbstractCategorizedWidget> {
+    public class PredicatesListWidget extends ContainerObjectSelectionList<AbstractCategorizedWidget> {
         public PredicatesListWidget() {
-            super(MinecraftClient.getInstance(), WorldGenerationPredicatesScreen.this.width,
+            super(Minecraft.getInstance(), WorldGenerationPredicatesScreen.this.width,
                     WorldGenerationPredicatesScreen.this.layout.getContentHeight(), WorldGenerationPredicatesScreen.this.layout.getHeaderHeight(), 24 * 4);
             //final HashMap<AbstractCategorizedWidget.Category, Map<AbstractCategorizedWidget.Key, AbstractCategorizedWidget>> map = Maps.newHashMap();
             final HashMap<PredicateCategory, Map<AbstractCategorizedWidget.Key<PredicateCategory>, AbstractCategorizedWidget>> map = Maps.newHashMap();
@@ -80,33 +80,26 @@ public class WorldGenerationPredicatesScreen extends Screen {
                 //{put(key, new );}
             };
 
-            Text textName = Text.translatable(category.getTranslationKey()).formatted(Formatting.BOLD, Formatting.YELLOW);
+            //Component textName = Component.translatable(category.getTranslationKey()).withStyle(ChatFormatting.BOLD, ChatFormatting.YELLOW);
 
             //this.addEntry(new TextCategoryWidget(textName, null, WorldGenerationPredicatesScreen.this.client));
             //this.addEntry(new CategorizedCyclicButtonWidget(textName, null, WorldGenerationPredicatesScreen.this.client));
             //this.addEntry(new CategorizedCyclicButtonWidget(Text.of("aa"), null, WorldGenerationPredicatesScreen.this.client, null));
-            this.addEntry(new CategorizedCyclicButtonWidget<PredicateTypes>(Text.of("aa"), null, WorldGenerationPredicatesScreen.this.client,
-                    CyclingButtonWidget.builder(PredicateTypes::getTranslationText)
-                            .values(PredicateTypes.values())
-                            .build(0, 0, 210, 20, Text.of("B"),
-                                    (button, value) -> GridsAndTrims.LOGGER.info("a")/*button.setValue(value)*/))); // GridsAndTrims.LOGGER.info("a")).
+            this.addEntry(new CategorizedCyclicButtonWidget<PredicateTypes>(Component.nullToEmpty("aa"), null, Minecraft.getInstance(),
+                    CycleButton.builder(PredicateTypes::getTranslationText, PredicateTypes.GRIDS)
+                            .withValues( PredicateTypes.values())
+                            .create(0, 0, 210, 20, Component.nullToEmpty("B"),
+                                    (button, value) -> GridsAndTrims.LOGGER.info("a"))));
             //this.addEntry(new PredicateWidget(null, Text.literal("sddsd"), WorldGenerationPredicatesScreen.this.client));
-            //this.addEntry(new PredicateWidget(null, Text.literal("2"), WorldGenerationPredicatesScreen.this.client));
-
-
-            //map.put(category, )
-            /*List<AbstractCategorizedWidget> category1 = new ArrayList<>(
-                    new
-            );*/
-
+            //this.addEntry(new PredicateWidget(null, Component.literal("2"), Minecraft.getInstance()));
         }
 
-        @Override
-        public void renderWidget(DrawContext context, int mouseX, int mouseY, float deltaTicks) {
-            super.renderWidget(context, mouseX, mouseY, deltaTicks);
-            AbstractCategorizedWidget abstractCategorizedWidget = this.getHoveredEntry();
+        @Override // Maybe is this one the right one?
+        public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float deltaTicks) {
+            super.extractWidgetRenderState(graphics, mouseX, mouseY, deltaTicks);
+            AbstractCategorizedWidget abstractCategorizedWidget = this.getHovered();
             if (abstractCategorizedWidget != null && abstractCategorizedWidget.description != null) {
-                context.drawTooltip(abstractCategorizedWidget.description, mouseX, mouseY);
+                graphics.setTooltipForNextFrame(abstractCategorizedWidget.description, mouseX, mouseY);
             }
         }
     }
@@ -118,6 +111,6 @@ public class WorldGenerationPredicatesScreen extends Screen {
     @FunctionalInterface
     @Environment(value= EnvType.CLIENT)
     static interface PredicateWidgetFactory<T extends AbstractCategorizedWidget.Key> {
-        public AbstractCategorizedWidget create(Text var1, List<OrderedText> var2, String var3, T var4);
+        public AbstractCategorizedWidget create(Component var1, List<FormattedCharSequence> var2, String var3, T var4);
     }
 }

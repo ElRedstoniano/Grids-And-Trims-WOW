@@ -1,52 +1,55 @@
 package com.el_redstoniano.grids_and_trims_wow.screen.widget;
 
 import com.google.common.collect.ImmutableList;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.Element;
-import net.minecraft.client.gui.Selectable;
-import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.screen.narration.NarrationPart;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Colors;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.gui.narration.NarratedElementType;
+import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.CommonColors;
+import net.minecraft.util.FormattedCharSequence;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 
 public class TextCategoryWidget extends ListNamedWidget {
-    public Text name;
-    private final MinecraftClient client;
+    public Component name;
+    private final Minecraft client;
 
-    public TextCategoryWidget(Text name, @Nullable List<OrderedText> description, MinecraftClient client) {
+    public TextCategoryWidget(Component name, @Nullable List<FormattedCharSequence> description, Minecraft client) {
         super(description, name, client);
         this.name = name;
         this.client = client;
     }
 
     @Override
-    public List<? extends Selectable> selectableChildren() {
-        return ImmutableList.of(new Selectable() {
+    public @NonNull List<? extends NarratableEntry> narratables() {
+        return ImmutableList.of(new NarratableEntry() {
             @Override
-            public SelectionType getType() {
-                return SelectionType.NONE;
+            public void updateNarration(@NonNull NarrationElementOutput output) {
+                output.add(NarratedElementType.TITLE, name);
             }
 
             @Override
-            public void appendNarrations(NarrationMessageBuilder builder) {
-                builder.put(NarrationPart.TITLE, name);
+            public @NonNull NarrationPriority narrationPriority() {
+                return NarrationPriority.NONE;
             }
         });
     }
 
     @Override
-    public List<? extends Element> children() {
+    public @NonNull List<? extends GuiEventListener> children() {
         return List.of();
     }
 
     @Override
-    public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickProgress) {
+    public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float tickProgress) {
+        //super.extractContent(graphics, mouseX, mouseY, hovered, a);
         //context.drawCenteredTextWithShadow(client.textRenderer, this.name, x + entryWidth / 2, y + 5, Colors.WHITE);
-        context.drawWrappedTextWithShadow(client.textRenderer, this.name, (x + entryWidth / 2) - client.textRenderer.getWidth(name), y + 5, 175, Colors.WHITE);
+        graphics.textWithWordWrap(client.font, this.name, (getX() + getWidth() / 2) - client.font.width(name),
+                getY() + 5, 175, CommonColors.WHITE);
     }
 }

@@ -1,7 +1,7 @@
 package com.el_redstoniano.grids_and_trims_wow.model;
 
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 
 import java.util.Collection;
 import java.util.HashSet;
