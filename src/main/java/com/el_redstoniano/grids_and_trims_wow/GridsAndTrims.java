@@ -63,31 +63,32 @@ public class GridsAndTrims implements ModInitializer {
 
         //ServerChunkEvents.CHUNK_GENERATE.register((serverLevel, levelChunk) -> {
         ServerChunkEvents.CHUNK_LOAD.register((serverLevel, levelChunk, generated) -> {
-            if (!generated) return;
-            //if (levelChunk.getInhabitedTime() != 0) {
-            //    return; // Minecraft no longer distinguishes in a simple and synchronous way between "loading from disc"
-                // and "finishing generation" within the same server thread, due to multithreaded chunk generation (async chunk generation).
-            //}
-            //ChunkSection[] chunkSections = worldChunk.getSectionArray();
-            //int posXChunk = worldChunk.getPos().x + 1; // if ((x * posXChunk) % 5 != 0)
-            //int posZChunk = worldChunk.getPos().z + 1;
-            if (!ChunkUtils.isModCustomWorldType(serverLevel))
-                return;
-            MinecraftServer server = serverLevel.getServer();
-
+            if (!generated) return; // If its not a new generated chunk, return
             try {
+                //if (levelChunk.getInhabitedTime() != 0) {
+                //    return; // Minecraft no longer distinguishes in a simple and synchronous way between "loading from disc"
+                // and "finishing generation" within the same server thread, due to multithreaded chunk generation (async chunk generation).
+                //}
+                //ChunkSection[] chunkSections = worldChunk.getSectionArray();
+                //int posXChunk = worldChunk.getPos().x + 1; // if ((x * posXChunk) % 5 != 0)
+                //int posZChunk = worldChunk.getPos().z + 1;
+                if (!ChunkUtils.isModCustomWorldType(serverLevel))
+                    return;
+                MinecraftServer server = serverLevel.getServer();
+
                 ChunkProcessingContext context = threadLocalChunkContext.get();
                 CHUNK_MANAGER.startRemovingBlocks(levelChunk, server, context);
+                //try/finally threadLocalChunkContext.remove();
+
+                serverLevel.getChunkSource().getLightEngine().lightChunk(levelChunk, false); // Update light for new spaces
+                server.schedule(new TickTask(server.getTickCount(), () -> {
+                    //serverLevel.getChunkManager().getLightingProvider().propagateLight(worldChunk.getPos());
+                    serverLevel.getChunkSource().getLightEngine().lightChunk(levelChunk, false); // Update light for new spaces
+                    levelChunk.setLightCorrect(true);
+                }));
             } finally {
                 threadLocalChunkContext.remove();
             }
-
-            serverLevel.getChunkSource().getLightEngine().lightChunk(levelChunk, false); // Update light for new spaces
-            server.schedule(new TickTask(server.getTickCount(), () -> {
-                //serverLevel.getChunkManager().getLightingProvider().propagateLight(worldChunk.getPos());
-                serverLevel.getChunkSource().getLightEngine().lightChunk(levelChunk, false); // Update light for new spaces
-                levelChunk.setLightCorrect(true);
-            }));
         });
     }
 

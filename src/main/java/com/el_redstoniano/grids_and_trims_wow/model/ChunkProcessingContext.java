@@ -2,6 +2,7 @@ package com.el_redstoniano.grids_and_trims_wow.model;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.chunk.ChunkAccess;
 
 import java.util.Collection;
 import java.util.HashSet;

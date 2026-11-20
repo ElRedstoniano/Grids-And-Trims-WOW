@@ -12,6 +12,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ImposterProtoChunk;
+import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.chunk.status.ChunkStatusTasks;
 import net.minecraft.world.level.chunk.status.WorldGenContext;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
@@ -33,7 +35,10 @@ public abstract class CustomChunkGeneratingMixin {
     private static void onChunkLoadAtHead(ChunkAccess chunk, WorldGenContext context, GenerationChunkHolder holder, CallbackInfoReturnable<ChunkAccess> cir
             /*, @Share("chunkGeneratorManagerID") LocalRef<ChunkGeneratorManager> chunkGeneratorManagerLocalRef*/
     ) {
-        GridsAndTrims.threadLocalChunkContext.set(new ChunkProcessingContext());
+        if(!(chunk instanceof ImposterProtoChunk)) {
+            ChunkProcessingContext chunkContext = new ChunkProcessingContext();
+            GridsAndTrims.threadLocalChunkContext.set(chunkContext);
+        }
     }
 
     @WrapOperation(method = "postLoadProtoChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/EntityType;loadEntitiesRecursive(Lnet/minecraft/world/level/storage/ValueInput$ValueInputList;Lnet/minecraft/world/level/Level;Lnet/minecraft/world/entity/EntitySpawnReason;)Ljava/util/stream/Stream;"))
@@ -42,7 +47,6 @@ public abstract class CustomChunkGeneratingMixin {
         Identifier dimensionType = level.dimension().identifier();
 
         chunkContext.assignDimensionId(dimensionType);
-
         Supplier<Stream<Entity>> supplier = () -> original.call(entities, level, reason);
         // Once the stream has been processed, it gets terminated and no more operations can be done, so it must be provided as a supplier as a workaround instead of doing original.call() two times
         chunkContext.addProtectedBlocks(GridsAndTrims.getChunkManager()

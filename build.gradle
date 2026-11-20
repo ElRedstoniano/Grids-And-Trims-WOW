@@ -83,6 +83,17 @@ jar {
     )
 }*/
 
+loom {
+    runs.configureEach {
+        preferGradleTask = false
+    }
+    /*runs {
+        client {
+            programArgs "--username", "El_Redstoniano", "--uuid", "3a1dacb6-81f0-4d6f-aef4-e0f1dd9af087"
+        }
+    }*/
+}
+
 // configure the maven publication
 publishing {
     publications {
