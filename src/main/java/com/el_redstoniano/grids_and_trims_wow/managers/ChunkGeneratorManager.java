@@ -1,6 +1,7 @@
 package com.el_redstoniano.grids_and_trims_wow.managers;
 
 import com.el_redstoniano.grids_and_trims_wow.config.GridConfig;
+import com.el_redstoniano.grids_and_trims_wow.mixin.accessor.ChunkAccessAccessor;
 import com.el_redstoniano.grids_and_trims_wow.model.ChunkProcessingContext;
 import com.el_redstoniano.grids_and_trims_wow.rules.blocks.BlockProtectionRule;
 import com.el_redstoniano.grids_and_trims_wow.rules.dimensions.DimensionRule;
@@ -43,19 +44,22 @@ public class ChunkGeneratorManager {
                 .collect(Collectors.toSet());
     }
 
-    public void startRemovingBlocks(LevelChunk worldChunk, MinecraftServer server, ChunkProcessingContext chunkContext) {
+    public void startRemovingBlocks(LevelChunk levelChunk, MinecraftServer server, ChunkProcessingContext chunkContext) {
         ChunkProcessingContext validatedChunkContext = chunkContext != null ? chunkContext : new ChunkProcessingContext();
         // Avoid null checks if the chunk for some reason didn't go through the CustomChunkGeneratingMixin
 
         //Starting iterating over local x y z coordinates
         for (int x = 0; x <= 15; x++) {
-            for (int y = worldChunk.getMinY(); y <= worldChunk.getMaxY(); y++) {
+            for (int y = levelChunk.getMinY(); y <= levelChunk.getMaxY(); y++) {
                 for (int z = 0; z <= 15; z++) {
-                    BlockPos globalBlockPos = worldChunk.getPos().getBlockAt(x, y, z);
-                    processPosition(globalBlockPos, x, y, z, worldChunk, server, validatedChunkContext);
+                    BlockPos globalBlockPos = levelChunk.getPos().getBlockAt(x, y, z);
+                    processPosition(globalBlockPos, x, y, z, levelChunk, server, validatedChunkContext);
                 }
             }
         }
+        // Remove all pending block entities that no longer exists inside blocks, this avoids spamming warnings on the console
+        ((ChunkAccessAccessor) levelChunk).gatWOW$getPendingBlockEntities().keySet()
+                .removeIf(blockPos -> levelChunk.getBlockState(blockPos).hasBlockEntity());
     }
 
     private void processPosition(BlockPos globalBlockPos, int x, int y, int z, LevelChunk levelChunk,
